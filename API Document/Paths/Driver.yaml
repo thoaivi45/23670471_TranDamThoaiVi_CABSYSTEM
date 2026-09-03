@@ -1,0 +1,170 @@
+drivers_me_availability:
+  patch:
+    tags:
+      - Drivers
+
+    summary: Cập nhật trạng thái và vị trí tài xế
+
+    operationId: updateDriverAvailability
+
+    description: |
+      Driver cập nhật trạng thái Available hoặc Unavailable
+      và vị trí hiện tại.
+      Phục vụ FR15 và AC08.
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+
+          schema:
+            $ref: ../components/schemas.yaml#/DriverAvailabilityRequest
+
+    responses:
+
+      '200':
+        description: Cập nhật trạng thái thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/DriverAvailability
+
+      '400':
+        $ref: ../components/responses.yaml#/BadRequest
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '403':
+        $ref: ../components/responses.yaml#/Forbidden
+
+
+drivers_me_vehicle:
+  put:
+    tags:
+      - Drivers
+
+    summary: Cập nhật phương tiện của tài xế
+
+    operationId: updateDriverVehicle
+
+    description: |
+      Driver lưu hoặc cập nhật thông tin phương tiện.
+      Phục vụ FR16 và AC18.
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+
+          schema:
+            $ref: ../components/schemas.yaml#/VehicleRequest
+
+    responses:
+
+      '200':
+        description: Cập nhật phương tiện thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/Vehicle
+
+      '400':
+        $ref: ../components/responses.yaml#/BadRequest
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '403':
+        $ref: ../components/responses.yaml#/Forbidden
+
+
+drivers_me_trip_requests:
+  get:
+    tags:
+      - Drivers
+
+    summary: Xem danh sách yêu cầu chuyến
+
+    operationId: getMyTripRequests
+
+    description: |
+      Driver xem các Trip Request đang chờ xử lý.
+      Phục vụ FR10-FR11 và AC05.
+
+    responses:
+
+      '200':
+        description: Lấy danh sách yêu cầu chuyến thành công
+
+        content:
+          application/json:
+
+            schema:
+              type: array
+
+              items:
+                $ref: ../components/schemas.yaml#/TripRequest
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '403':
+        $ref: ../components/responses.yaml#/Forbidden
+
+
+trip_requests_requestId:
+  patch:
+    tags:
+      - Drivers
+
+    summary: Chấp nhận hoặc từ chối chuyến
+
+    operationId: respondTripRequest
+
+    description: |
+      Driver Accept hoặc Reject Trip Request.
+      Nếu Reject, hệ thống tiếp tục tìm Driver khác.
+      Phục vụ FR11-FR12 và AC06.
+
+    parameters:
+
+      - $ref: ../components/parameters.yaml#/TripRequestId
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+
+          schema:
+            $ref: ../components/schemas.yaml#/TripRequestDecision
+
+    responses:
+
+      '200':
+        description: Xử lý Trip Request thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/TripRequestDecisionResult
+
+      '400':
+        $ref: ../components/responses.yaml#/BadRequest
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '403':
+        $ref: ../components/responses.yaml#/Forbidden
+
+      '404':
+        $ref: ../components/responses.yaml#/NotFound
