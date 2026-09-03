@@ -1,0 +1,45 @@
+trips_tripId_ratings:
+  post:
+    tags:
+      - Ratings
+
+    summary: Đánh giá tài xế
+
+    operationId: rateDriver
+
+    description: |
+      Customer đánh giá Driver sau khi Trip hoàn thành.
+      Phục vụ FR26 và AC14.
+
+    parameters:
+
+      - $ref: ../components/parameters.yaml#/TripId
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+
+          schema:
+            $ref: ../components/schemas.yaml#/CreateRatingRequest
+
+    responses:
+
+      '201':
+        description: Lưu đánh giá thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/Rating
+
+      '400':
+        $ref: ../components/responses.yaml#/BadRequest
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '404':
+        $ref: ../components/responses.yaml#/NotFound
