@@ -1,0 +1,73 @@
+bookings:
+  post:
+    tags:
+      - Bookings
+
+    summary: Tạo yêu cầu đặt chuyến
+
+    operationId: createBooking
+
+    description: |
+      Customer nhập điểm đón, điểm đến và loại xe để tạo Booking.
+      Phục vụ FR04-FR07 và AC03.
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+
+          schema:
+            $ref: ../components/schemas.yaml#/CreateBookingRequest
+
+    responses:
+
+      '201':
+        description: Tạo Booking thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/Booking
+
+      '400':
+        $ref: ../components/responses.yaml#/BadRequest
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+
+bookings_bookingId:
+  get:
+    tags:
+      - Bookings
+
+    summary: Xem trạng thái Booking
+
+    operationId: getBookingById
+
+    description: |
+      Customer xem trạng thái Booking hiện tại.
+      Phục vụ FR17 và AC09.
+
+    parameters:
+
+      - $ref: ../components/parameters.yaml#/BookingId
+
+    responses:
+
+      '200':
+        description: Lấy Booking thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/Booking
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '404':
+        $ref: ../components/responses.yaml#/NotFound
