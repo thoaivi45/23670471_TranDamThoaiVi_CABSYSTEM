@@ -1,0 +1,37 @@
+users_me:
+  patch:
+    tags:
+      - Users
+
+    summary: Cập nhật thông tin cá nhân
+
+    operationId: updateMyProfile
+
+    description: |
+      Phục vụ FR03 và AC17.
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+
+          schema:
+            $ref: ../components/schemas.yaml#/UpdateProfileRequest
+
+    responses:
+
+      '200':
+        description: Cập nhật thông tin thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/User
+
+      '400':
+        $ref: ../components/responses.yaml#/BadRequest
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
