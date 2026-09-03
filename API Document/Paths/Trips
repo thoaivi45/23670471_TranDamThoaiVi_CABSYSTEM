@@ -1,0 +1,113 @@
+trips_tripId:
+  get:
+    tags:
+      - Trips
+
+    summary: Xem thông tin chuyến đi
+
+    operationId: getTripById
+
+    description: |
+      Xem trạng thái và thông tin của Trip.
+      Phục vụ FR17 và AC09.
+
+    parameters:
+
+      - $ref: ../components/parameters.yaml#/TripId
+
+    responses:
+
+      '200':
+        description: Lấy Trip thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/Trip
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '404':
+        $ref: ../components/responses.yaml#/NotFound
+
+
+  patch:
+    tags:
+      - Trips
+
+    summary: Cập nhật trạng thái chuyến
+
+    operationId: updateTripStatus
+
+    description: |
+      Driver sử dụng API này để bắt đầu hoặc hoàn thành Trip.
+      Phục vụ FR13, FR14, FR18 và AC07, AC10.
+
+    parameters:
+
+      - $ref: ../components/parameters.yaml#/TripId
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+
+          schema:
+            $ref: ../components/schemas.yaml#/UpdateTripStatusRequest
+
+    responses:
+
+      '200':
+        description: Cập nhật Trip thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/Trip
+
+      '400':
+        $ref: ../components/responses.yaml#/BadRequest
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '403':
+        $ref: ../components/responses.yaml#/Forbidden
+
+      '404':
+        $ref: ../components/responses.yaml#/NotFound
+
+
+users_me_trips:
+  get:
+    tags:
+      - Trips
+
+    summary: Xem lịch sử chuyến đi
+
+    operationId: getMyTripHistory
+
+    description: |
+      Customer xem lịch sử chuyến của mình.
+      Phục vụ FR25 và AC13.
+
+    responses:
+
+      '200':
+        description: Lấy lịch sử chuyến thành công
+
+        content:
+          application/json:
+
+            schema:
+              type: array
+
+              items:
+                $ref: ../components/schemas.yaml#/Trip
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
