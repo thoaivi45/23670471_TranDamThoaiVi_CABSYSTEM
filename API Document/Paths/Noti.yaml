@@ -1,0 +1,29 @@
+notifications:
+  get:
+    tags:
+      - Notifications
+
+    summary: Xem thông báo của người dùng
+
+    operationId: getMyNotifications
+
+    description: |
+      Người dùng xem các Notification của mình.
+      Phục vụ FR21 và AC12.
+
+    responses:
+
+      '200':
+        description: Lấy danh sách Notification thành công
+
+        content:
+          application/json:
+
+            schema:
+              type: array
+
+              items:
+                $ref: ../components/schemas.yaml#/Notification
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
