@@ -789,7 +789,11 @@ Xác định điều kiện để một chức năng được xem là hoàn thà
 | AC13 | FR25 | Customer xem được lịch sử chuyến của mình. |
 | AC14 | FR26 | Chỉ Trip Completed mới được đánh giá. |
 | AC15 | FR28 | Người dùng không được truy cập chức năng ngoài quyền của mình. |
-
+| AC17 | FR03 | Người dùng nhập thông tin hợp lệ thì Profile được cập nhật thành công. |
+| AC18 | FR16 | Driver có thể lưu và cập nhật thông tin phương tiện hợp lệ. |
+| AC19 | FR22 | Operations Staff có quyền có thể xem và tìm kiếm Customer. |
+| AC20 | FR23 | Operations Staff có quyền có thể xem và tìm kiếm Driver. |
+| AC21 | FR24 | Operations Staff có quyền có thể xem và lọc Trip. |
 ---
 
 # B14. Requirement Traceability Matrix
