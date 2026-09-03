@@ -1,0 +1,86 @@
+auth_register:
+  post:
+    tags:
+      - Auth
+
+    summary: Đăng ký tài khoản khách hàng
+
+    operationId: registerCustomer
+
+    security: []
+
+    description: |
+      Phục vụ FR01 và AC01.
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+
+          schema:
+            $ref: ../components/schemas.yaml#/RegisterRequest
+
+    responses:
+
+      '201':
+        description: Tạo tài khoản thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/User
+
+      '400':
+        $ref: ../components/responses.yaml#/BadRequest
+
+      '409':
+        description: Email hoặc số điện thoại đã tồn tại
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/ApiError
+
+
+auth_login:
+  post:
+    tags:
+      - Auth
+
+    summary: Đăng nhập
+
+    operationId: login
+
+    security: []
+
+    description: |
+      Phục vụ FR02 và AC02.
+
+    requestBody:
+      required: true
+
+      content:
+        application/json:
+
+          schema:
+            $ref: ../components/schemas.yaml#/LoginRequest
+
+    responses:
+
+      '200':
+        description: Đăng nhập thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/AuthResponse
+
+      '400':
+        $ref: ../components/responses.yaml#/BadRequest
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
