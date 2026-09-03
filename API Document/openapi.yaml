@@ -1,0 +1,1221 @@
+openapi: 3.0.3
+info:
+  title: CAB System API
+  version: 1.0.0
+  description: 'REST API specification for the CAB System MVP.
+
+    The API is designed from the Functional Requirements (FR) and Acceptance Criteria (AC) in the SRS.
+
+    '
+servers:
+- url: http://localhost:8080/api/v1
+  description: Local development server
+tags:
+- name: Auth
+- name: Users
+- name: Drivers
+- name: Bookings
+- name: Trips
+- name: Payments
+- name: Ratings
+- name: Notifications
+- name: Admin
+security:
+- bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Đăng ký tài khoản khách hàng
+      operationId: registerCustomer
+      security: []
+      description: Phục vụ FR01, AC01.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Tạo tài khoản thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email hoặc số điện thoại đã tồn tại
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Đăng nhập
+      operationId: login
+      security: []
+      description: Phục vụ FR02, AC02.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/me:
+    patch:
+      tags:
+      - Users
+      summary: Cập nhật thông tin cá nhân
+      operationId: updateMyProfile
+      description: Phục vụ FR03 và AC17.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /drivers/me/availability:
+    patch:
+      tags:
+      - Drivers
+      summary: Cập nhật trạng thái và vị trí tài xế
+      operationId: updateDriverAvailability
+      description: Phục vụ FR15, AC08. Vị trí được dùng cho quá trình tìm tài xế.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverAvailabilityRequest'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverAvailability'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /drivers/me/vehicle:
+    put:
+      tags:
+      - Drivers
+      summary: Tạo hoặc cập nhật phương tiện của tài xế
+      operationId: upsertMyVehicle
+      description: Phục vụ FR16 và AC18.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleRequest'
+      responses:
+        '200':
+          description: Lưu thông tin phương tiện thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /bookings:
+    post:
+      tags:
+      - Bookings
+      summary: Tạo yêu cầu đặt chuyến
+      operationId: createBooking
+      description: 'API chính cho chức năng tạo mới yêu cầu chuyến.
+
+        Phục vụ FR04-FR07, AC03.
+
+        Sau khi Booking được tạo, hệ thống bắt đầu quá trình tìm tài xế theo FR08-FR12.
+
+        '
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Tạo Booking thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: Dữ liệu đặt chuyến hợp lệ về cú pháp nhưng không thể xử lý
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /bookings/{bookingId}:
+    get:
+      tags:
+      - Bookings
+      summary: Xem trạng thái Booking hiện tại
+      operationId: getBookingById
+      description: Phục vụ FR17, AC09.
+      parameters:
+      - $ref: '#/components/parameters/BookingId'
+      responses:
+        '200':
+          description: Thông tin Booking
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /drivers/me/trip-requests:
+    get:
+      tags:
+      - Drivers
+      summary: Lấy các yêu cầu chuyến đang chờ tài xế phản hồi
+      operationId: getMyTripRequests
+      description: Phục vụ FR10-FR11, AC05.
+      parameters:
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: string
+          enum:
+          - PENDING
+          - ACCEPTED
+          - REJECTED
+          - EXPIRED
+          default: PENDING
+      responses:
+        '200':
+          description: Danh sách yêu cầu chuyến
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /trip-requests/{requestId}:
+    patch:
+      tags:
+      - Drivers
+      summary: Tài xế chấp nhận hoặc từ chối yêu cầu chuyến
+      operationId: respondTripRequest
+      description: Phục vụ FR11-FR12, AC06.
+      parameters:
+      - $ref: '#/components/parameters/TripRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripRequestDecision'
+      responses:
+        '200':
+          description: Đã ghi nhận phản hồi của tài xế
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripRequestDecisionResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Yêu cầu chuyến đã được xử lý hoặc tài xế không còn Available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /trips/{tripId}:
+    get:
+      tags:
+      - Trips
+      summary: Xem chi tiết chuyến đi
+      operationId: getTripById
+      description: Phục vụ FR17, AC09.
+      parameters:
+      - $ref: '#/components/parameters/TripId'
+      responses:
+        '200':
+          description: Thông tin chuyến đi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - Trips
+      summary: Cập nhật trạng thái chuyến đi
+      operationId: updateTripStatus
+      description: 'Driver dùng API này để bắt đầu hoặc hoàn thành chuyến.
+
+        Phục vụ FR13-FR14 và FR18, AC07, AC10.
+
+        '
+      parameters:
+      - $ref: '#/components/parameters/TripId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTripStatusRequest'
+      responses:
+        '200':
+          description: Cập nhật trạng thái Trip thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Chuyển trạng thái không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /trips/{tripId}/payments:
+    post:
+      tags:
+      - Payments
+      summary: Thanh toán cho chuyến đi
+      operationId: createTripPayment
+      description: Phục vụ FR19-FR20, AC11. Online Payment được xử lý thông qua Payment Provider.
+      parameters:
+      - $ref: '#/components/parameters/TripId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+      responses:
+        '201':
+          description: Payment được tạo và ghi nhận
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Trip chưa Completed hoặc Trip đã được thanh toán
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /users/me/trips:
+    get:
+      tags:
+      - Trips
+      summary: Xem lịch sử chuyến của người dùng hiện tại
+      operationId: getMyTripHistory
+      description: Phục vụ FR25, AC13.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      responses:
+        '200':
+          description: Danh sách Trip
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trip'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /trips/{tripId}/ratings:
+    post:
+      tags:
+      - Ratings
+      summary: Đánh giá tài xế sau chuyến đi
+      operationId: rateDriver
+      description: Phục vụ FR26, AC14.
+      parameters:
+      - $ref: '#/components/parameters/TripId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRatingRequest'
+      responses:
+        '201':
+          description: Đánh giá được lưu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rating'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Trip chưa Completed hoặc Trip đã được đánh giá
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /notifications:
+    get:
+      tags:
+      - Notifications
+      summary: Xem các thông báo của người dùng hiện tại
+      operationId: getMyNotifications
+      description: Hỗ trợ kiểm tra kết quả của FR21, AC12 trong MVP.
+      responses:
+        '200':
+          description: Danh sách thông báo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/customers:
+    get:
+      tags:
+      - Admin
+      summary: Lấy danh sách khách hàng
+      operationId: adminGetCustomers
+      description: Phục vụ FR22 và AC19.
+      parameters:
+      - $ref: '#/components/parameters/SearchQuery'
+      responses:
+        '200':
+          description: Danh sách khách hàng
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /admin/drivers:
+    get:
+      tags:
+      - Admin
+      summary: Lấy danh sách tài xế
+      operationId: adminGetDrivers
+      description: Phục vụ FR23 và AC20.
+      parameters:
+      - $ref: '#/components/parameters/SearchQuery'
+      - in: query
+        name: availability
+        schema:
+          type: string
+          enum:
+          - AVAILABLE
+          - UNAVAILABLE
+          - ON_TRIP
+      responses:
+        '200':
+          description: Danh sách tài xế
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DriverSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /admin/trips:
+    get:
+      tags:
+      - Admin
+      summary: Theo dõi danh sách chuyến đi
+      operationId: adminGetTrips
+      description: Phục vụ FR24 và AC21.
+      parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - DRIVER_ASSIGNED
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+      responses:
+        '200':
+          description: Danh sách chuyến đi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trip'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /admin/reports/summary:
+    get:
+      tags:
+      - Admin
+      summary: Xem báo cáo tổng hợp
+      operationId: getSummaryReport
+      description: Phục vụ FR27 và AC16.
+      parameters:
+      - in: query
+        name: from
+        required: false
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: to
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Báo cáo tổng hợp
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    BookingId:
+      in: path
+      name: bookingId
+      required: true
+      schema:
+        type: string
+      example: BKG-000001
+    TripId:
+      in: path
+      name: tripId
+      required: true
+      schema:
+        type: string
+      example: TRIP-000001
+    TripRequestId:
+      in: path
+      name: requestId
+      required: true
+      schema:
+        type: string
+      example: REQ-000001
+    SearchQuery:
+      in: query
+      name: q
+      required: false
+      schema:
+        type: string
+        maxLength: 100
+  responses:
+    BadRequest:
+      description: Dữ liệu request không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Unauthorized:
+      description: Chưa đăng nhập hoặc token không hợp lệ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Forbidden:
+      description: Người dùng không có quyền thực hiện chức năng này
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotFound:
+      description: Không tìm thấy dữ liệu
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+      - fullName
+      - phone
+      - email
+      - password
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Nguyen Van A
+        phone:
+          type: string
+          pattern: ^0[0-9]{9}$
+          example: 0901234567
+        email:
+          type: string
+          format: email
+          example: nguyenvana@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: Password123
+    LoginRequest:
+      type: object
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: nguyenvana@example.com
+        password:
+          type: string
+          format: password
+          example: Password123
+    AuthResponse:
+      type: object
+      required:
+      - accessToken
+      - tokenType
+      - user
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiJ9.demo.token
+        tokenType:
+          type: string
+          example: Bearer
+        user:
+          $ref: '#/components/schemas/User'
+    User:
+      type: object
+      required:
+      - id
+      - fullName
+      - phone
+      - email
+      - role
+      - status
+      properties:
+        id:
+          type: string
+          example: USR-000001
+        fullName:
+          type: string
+          example: Nguyen Van A
+        phone:
+          type: string
+          example: 0901234567
+        email:
+          type: string
+          format: email
+          example: nguyenvana@example.com
+        role:
+          type: string
+          enum:
+          - CUSTOMER
+          - DRIVER
+          - OPERATIONS_STAFF
+          example: CUSTOMER
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - BLOCKED
+          example: ACTIVE
+    UpdateProfileRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 100
+        phone:
+          type: string
+          pattern: ^0[0-9]{9}$
+      minProperties: 1
+    DriverAvailabilityRequest:
+      type: object
+      required:
+      - status
+      - latitude
+      - longitude
+      properties:
+        status:
+          type: string
+          enum:
+          - AVAILABLE
+          - UNAVAILABLE
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          example: 10.8231
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          example: 106.6297
+    DriverAvailability:
+      type: object
+      properties:
+        driverId:
+          type: string
+          example: DRV-000001
+        status:
+          type: string
+          enum:
+          - AVAILABLE
+          - UNAVAILABLE
+          - ON_TRIP
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        updatedAt:
+          type: string
+          format: date-time
+    VehicleRequest:
+      type: object
+      required:
+      - plateNumber
+      - vehicleType
+      properties:
+        plateNumber:
+          type: string
+          minLength: 5
+          maxLength: 20
+          example: 59A1-12345
+        vehicleType:
+          type: string
+          enum:
+          - BIKE
+          - CAR
+          example: CAR
+    Vehicle:
+      allOf:
+      - $ref: '#/components/schemas/VehicleRequest'
+      - type: object
+        properties:
+          id:
+            type: string
+            example: VEH-000001
+          driverId:
+            type: string
+            example: DRV-000001
+    LocationInput:
+      type: object
+      required:
+      - address
+      - latitude
+      - longitude
+      properties:
+        address:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: 12 Nguyen Van Bao, Go Vap, Ho Chi Minh City
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          example: 10.8275
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          example: 106.6771
+    CreateBookingRequest:
+      type: object
+      required:
+      - pickup
+      - destination
+      - vehicleType
+      properties:
+        pickup:
+          $ref: '#/components/schemas/LocationInput'
+        destination:
+          $ref: '#/components/schemas/LocationInput'
+        vehicleType:
+          type: string
+          enum:
+          - BIKE
+          - CAR
+          example: CAR
+        note:
+          type: string
+          maxLength: 255
+          nullable: true
+          example: Don tai cong chinh
+    Booking:
+      type: object
+      required:
+      - id
+      - customerId
+      - pickup
+      - destination
+      - vehicleType
+      - status
+      - createdAt
+      properties:
+        id:
+          type: string
+          example: BKG-000001
+        customerId:
+          type: string
+          example: CUS-000001
+        pickup:
+          $ref: '#/components/schemas/LocationInput'
+        destination:
+          $ref: '#/components/schemas/LocationInput'
+        vehicleType:
+          type: string
+          enum:
+          - BIKE
+          - CAR
+        status:
+          type: string
+          enum:
+          - SEARCHING_DRIVER
+          - DRIVER_ASSIGNED
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+          - NO_DRIVER_FOUND
+          example: SEARCHING_DRIVER
+        driver:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/DriverSummary'
+        tripId:
+          type: string
+          nullable: true
+          example: TRIP-000001
+        createdAt:
+          type: string
+          format: date-time
+    TripRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          example: REQ-000001
+        bookingId:
+          type: string
+          example: BKG-000001
+        pickup:
+          $ref: '#/components/schemas/LocationInput'
+        destination:
+          $ref: '#/components/schemas/LocationInput'
+        vehicleType:
+          type: string
+          enum:
+          - BIKE
+          - CAR
+        status:
+          type: string
+          enum:
+          - PENDING
+          - ACCEPTED
+          - REJECTED
+          - EXPIRED
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Giá trị cụ thể phụ thuộc Timeout Policy đang TBD.
+    TripRequestDecision:
+      type: object
+      required:
+      - decision
+      properties:
+        decision:
+          type: string
+          enum:
+          - ACCEPT
+          - REJECT
+          example: ACCEPT
+    TripRequestDecisionResult:
+      type: object
+      properties:
+        requestId:
+          type: string
+          example: REQ-000001
+        status:
+          type: string
+          enum:
+          - ACCEPTED
+          - REJECTED
+        tripId:
+          type: string
+          nullable: true
+          description: Có giá trị khi Driver ACCEPT.
+          example: TRIP-000001
+        bookingId:
+          type: string
+          example: BKG-000001
+    UpdateTripStatusRequest:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - IN_PROGRESS
+          - COMPLETED
+          example: IN_PROGRESS
+    Trip:
+      type: object
+      required:
+      - id
+      - bookingId
+      - customerId
+      - driverId
+      - status
+      properties:
+        id:
+          type: string
+          example: TRIP-000001
+        bookingId:
+          type: string
+          example: BKG-000001
+        customerId:
+          type: string
+          example: CUS-000001
+        driverId:
+          type: string
+          example: DRV-000001
+        pickup:
+          $ref: '#/components/schemas/LocationInput'
+        destination:
+          $ref: '#/components/schemas/LocationInput'
+        vehicleType:
+          type: string
+          enum:
+          - BIKE
+          - CAR
+        status:
+          type: string
+          enum:
+          - DRIVER_ASSIGNED
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+        startTime:
+          type: string
+          format: date-time
+          nullable: true
+        endTime:
+          type: string
+          format: date-time
+          nullable: true
+        fare:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          example: 85000
+          description: Công thức tính cước hiện đang TBD trong SRS.
+    CreatePaymentRequest:
+      type: object
+      required:
+      - method
+      properties:
+        method:
+          type: string
+          enum:
+          - CASH
+          - ONLINE
+          example: ONLINE
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          example: PAY-000001
+        tripId:
+          type: string
+          example: TRIP-000001
+        amount:
+          type: number
+          format: double
+          example: 85000
+        method:
+          type: string
+          enum:
+          - CASH
+          - ONLINE
+        status:
+          type: string
+          enum:
+          - PENDING
+          - SUCCESS
+          - FAILED
+        createdAt:
+          type: string
+          format: date-time
+    CreateRatingRequest:
+      type: object
+      required:
+      - score
+      properties:
+        score:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: Tai xe lich su va dung gio
+    Rating:
+      type: object
+      properties:
+        id:
+          type: string
+          example: RAT-000001
+        tripId:
+          type: string
+          example: TRIP-000001
+        score:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          example: NOTI-000001
+        type:
+          type: string
+          enum:
+          - BOOKING_CREATED
+          - DRIVER_ASSIGNED
+          - TRIP_STARTED
+          - TRIP_COMPLETED
+          - PAYMENT_RESULT
+        message:
+          type: string
+          example: Tai xe da nhan chuyen cua ban
+        read:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+    CustomerSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          example: CUS-000001
+        fullName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - BLOCKED
+    DriverSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          example: DRV-000001
+        fullName:
+          type: string
+          example: Tran Van B
+        phone:
+          type: string
+          example: 0912345678
+        availability:
+          type: string
+          enum:
+          - AVAILABLE
+          - UNAVAILABLE
+          - ON_TRIP
+        vehicleType:
+          type: string
+          enum:
+          - BIKE
+          - CAR
+        rating:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 5
+          nullable: true
+    ReportSummary:
+      type: object
+      properties:
+        totalTrips:
+          type: integer
+          minimum: 0
+          example: 1250
+        completedTrips:
+          type: integer
+          minimum: 0
+          example: 1100
+        cancelledTrips:
+          type: integer
+          minimum: 0
+          example: 80
+        completionRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          example: 88.0
+        cancellationRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          example: 6.4
+        revenue:
+          type: number
+          format: double
+          minimum: 0
+          example: 95000000
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: INVALID_REQUEST
+        message:
+          type: string
+          example: Du lieu khong hop le
+        details:
+          nullable: true
+          type: object
+          additionalProperties: true
