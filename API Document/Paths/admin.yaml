@@ -1,0 +1,155 @@
+admin_customers:
+  get:
+    tags:
+      - Admin
+
+    summary: Xem và tìm kiếm khách hàng
+
+    operationId: adminGetCustomers
+
+    description: |
+      Operations Staff xem và tìm kiếm Customer.
+      Phục vụ FR22 và AC19.
+
+    parameters:
+
+      - $ref: ../components/parameters.yaml#/SearchQuery
+
+    responses:
+
+      '200':
+        description: Lấy danh sách Customer thành công
+
+        content:
+          application/json:
+
+            schema:
+              type: array
+
+              items:
+                $ref: ../components/schemas.yaml#/CustomerSummary
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '403':
+        $ref: ../components/responses.yaml#/Forbidden
+
+
+admin_drivers:
+  get:
+    tags:
+      - Admin
+
+    summary: Xem và tìm kiếm tài xế
+
+    operationId: adminGetDrivers
+
+    description: |
+      Operations Staff xem và tìm kiếm Driver.
+      Phục vụ FR23 và AC20.
+
+    parameters:
+
+      - $ref: ../components/parameters.yaml#/SearchQuery
+
+    responses:
+
+      '200':
+        description: Lấy danh sách Driver thành công
+
+        content:
+          application/json:
+
+            schema:
+              type: array
+
+              items:
+                $ref: ../components/schemas.yaml#/DriverSummary
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '403':
+        $ref: ../components/responses.yaml#/Forbidden
+
+
+admin_trips:
+  get:
+    tags:
+      - Admin
+
+    summary: Xem danh sách chuyến đi
+
+    operationId: adminGetTrips
+
+    description: |
+      Operations Staff xem và theo dõi các Trip.
+      Phục vụ FR24 và AC21.
+
+    parameters:
+
+      - name: status
+        in: query
+        required: false
+
+        schema:
+          type: string
+
+          enum:
+            - SEARCHING_DRIVER
+            - DRIVER_ASSIGNED
+            - IN_PROGRESS
+            - COMPLETED
+            - CANCELLED
+
+    responses:
+
+      '200':
+        description: Lấy danh sách Trip thành công
+
+        content:
+          application/json:
+
+            schema:
+              type: array
+
+              items:
+                $ref: ../components/schemas.yaml#/Trip
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '403':
+        $ref: ../components/responses.yaml#/Forbidden
+
+
+admin_reports_summary:
+  get:
+    tags:
+      - Admin
+
+    summary: Xem báo cáo tổng quan
+
+    operationId: adminGetReportSummary
+
+    description: |
+      Operations Staff xem thống kê số chuyến và doanh thu.
+      Phục vụ FR27 và AC16.
+
+    responses:
+
+      '200':
+        description: Lấy báo cáo thành công
+
+        content:
+          application/json:
+
+            schema:
+              $ref: ../components/schemas.yaml#/ReportSummary
+
+      '401':
+        $ref: ../components/responses.yaml#/Unauthorized
+
+      '403':
+        $ref: ../components/responses.yaml#/Forbidden
