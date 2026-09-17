@@ -1,86 +1,183 @@
-auth_register:
-  post:
-    tags:
-      - Auth
-
-    summary: Đăng ký tài khoản khách hàng
-
-    operationId: registerCustomer
-
-    security: []
-
-    description: |
-      Phục vụ FR01 và AC01.
-
-    requestBody:
-      required: true
-
-      content:
-        application/json:
-
-          schema:
-            $ref: ../components/schemas.yaml#/RegisterRequest
-
-    responses:
-
-      '201':
-        description: Tạo tài khoản thành công
-
+openapi: 3.0.3
+info:
+  title: CAB System - Authentication API
+  version: 1.0.0
+  description: Authentication endpoints for CAB System.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Authentication
+paths:
+  /auth/register:
+    post:
+      tags:
+      - Authentication
+      summary: Register customer account
+      operationId: registerCustomer
+      description: Creates a new Customer account. Password must be stored as a hash
+        by the backend.
+      security: []
+      x-srs-trace:
+        br:
+        - BR01
+        fr:
+        - FR01
+        ac:
+        - AC01
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid registration data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Email or phone already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
         content:
           application/json:
-
             schema:
-              $ref: ../components/schemas.yaml#/User
-
-      '400':
-        $ref: ../components/responses.yaml#/BadRequest
-
-      '409':
-        description: Email hoặc số điện thoại đã tồn tại
-
+              $ref: '#/components/schemas/RegisterRequest'
+  /auth/login:
+    post:
+      tags:
+      - Authentication
+      summary: Login
+      operationId: login
+      description: Authenticates a user and returns an access token.
+      security: []
+      x-srs-trace:
+        br:
+        - BR01
+        fr:
+        - FR02
+        ac:
+        - AC02
+        rules:
+        - RULE01
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Invalid credentials or disabled account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
         content:
           application/json:
-
             schema:
-              $ref: ../components/schemas.yaml#/ApiError
-
-
-auth_login:
-  post:
-    tags:
-      - Auth
-
-    summary: Đăng nhập
-
-    operationId: login
-
-    security: []
-
-    description: |
-      Phục vụ FR02 và AC02.
-
-    requestBody:
-      required: true
-
-      content:
-        application/json:
-
-          schema:
-            $ref: ../components/schemas.yaml#/LoginRequest
-
-    responses:
-
-      '200':
-        description: Đăng nhập thành công
-
-        content:
-          application/json:
-
-            schema:
-              $ref: ../components/schemas.yaml#/AuthResponse
-
-      '400':
-        $ref: ../components/responses.yaml#/BadRequest
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
+              $ref: '#/components/schemas/LoginRequest'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    RegisterRequest:
+      type: object
+      required:
+      - fullName
+      - phone
+      - email
+      - password
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          example: Tran Dam Thoai Vi
+        phone:
+          type: string
+          example: 0901234567
+        email:
+          type: string
+          format: email
+          example: customer@example.com
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: secret123
+    LoginRequest:
+      type: object
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        fullName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+          - CUSTOMER
+          - DRIVER
+          - OPERATIONS_STAFF
+        status:
+          type: string
+          example: ACTIVE
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        user:
+          $ref: '#/components/schemas/User'
