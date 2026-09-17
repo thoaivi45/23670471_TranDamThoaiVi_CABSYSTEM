@@ -1,37 +1,134 @@
-users_me:
-  patch:
-    tags:
+openapi: 3.0.3
+info:
+  title: CAB System - User API
+  version: 1.0.0
+  description: User profile endpoints.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Users
+paths:
+  /users/me:
+    get:
+      tags:
       - Users
-
-    summary: Cập nhật thông tin cá nhân
-
-    operationId: updateMyProfile
-
-    description: |
-      Phục vụ FR03 và AC17.
-
-    requestBody:
-      required: true
-
-      content:
-        application/json:
-
-          schema:
-            $ref: ../components/schemas.yaml#/UpdateProfileRequest
-
-    responses:
-
-      '200':
-        description: Cập nhật thông tin thành công
-
+      summary: Get my profile
+      operationId: getMyProfile
+      description: Returns the authenticated user's profile.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR01
+        fr:
+        - FR03
+        ac:
+        - AC03
+      responses:
+        '200':
+          description: Profile returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    patch:
+      tags:
+      - Users
+      summary: Update my profile
+      operationId: updateMyProfile
+      description: Updates the authenticated user's personal information.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR01
+        fr:
+        - FR03
+        ac:
+        - AC03
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Invalid profile data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Email or phone conflicts with another account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
         content:
           application/json:
-
             schema:
-              $ref: ../components/schemas.yaml#/User
-
-      '400':
-        $ref: ../components/responses.yaml#/BadRequest
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
+              $ref: '#/components/schemas/UpdateProfileRequest'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        fullName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+    UpdateProfileRequest:
+      type: object
+      minProperties: 1
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
