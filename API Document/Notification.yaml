@@ -1,29 +1,136 @@
-notifications:
-  get:
-    tags:
+openapi: 3.0.3
+info:
+  title: CAB System - Notification API
+  version: 1.0.0
+  description: In-system notification query endpoints.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Notifications
+paths:
+  /notifications:
+    get:
+      tags:
       - Notifications
-
-    summary: Xem thông báo của người dùng
-
-    operationId: getMyNotifications
-
-    description: |
-      Người dùng xem các Notification của mình.
-      Phục vụ FR21 và AC12.
-
-    responses:
-
-      '200':
-        description: Lấy danh sách Notification thành công
-
-        content:
-          application/json:
-
-            schema:
-              type: array
-
-              items:
-                $ref: ../components/schemas.yaml#/Notification
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
+      summary: List my notifications
+      operationId: getMyNotifications
+      description: Returns Notifications belonging to the authenticated Customer or
+        Driver. Notifications are created automatically by backend events; notification
+        failure must not roll back Booking, Trip or Payment.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR09
+        fr:
+        - FR26
+        - FR27
+        ac:
+        - AC26
+        - AC27
+        exceptions:
+        - EX10
+      responses:
+        '200':
+          description: Notifications returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /notifications/{notificationId}/read:
+    patch:
+      tags:
+      - Notifications
+      summary: Mark notification as read
+      operationId: markNotificationRead
+      description: Marks one Notification belonging to the authenticated user as read.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR09
+        fr:
+        - FR26
+        - FR27
+        ac:
+        - AC26
+        - AC27
+      responses:
+        '200':
+          description: Notification updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Notification does not belong to this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - name: notificationId
+        in: path
+        required: true
+        description: Notification identifier
+        schema:
+          type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        type:
+          type: string
+        message:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
