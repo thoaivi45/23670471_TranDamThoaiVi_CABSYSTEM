@@ -1,0 +1,155 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Reporting API
+  version: 1.0.0
+  description: Basic CAB operational reporting endpoints.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Reporting
+paths:
+  /reports/summary:
+    get:
+      tags:
+      - Reporting
+      summary: Get report summary
+      operationId: getReportSummary
+      description: Returns basic Trip, Revenue, Completion and Cancellation metrics
+        from current system data.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR12
+        fr:
+        - FR32
+        ac:
+        - AC32
+        rules:
+        - RULE14
+        exceptions:
+        - EX11
+      responses:
+        '200':
+          description: Summary report returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Operations Staff role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /reports/drivers:
+    get:
+      tags:
+      - Reporting
+      summary: Get driver activity report
+      operationId: getDriverReport
+      description: Returns basic Driver activity metrics. This remains within the
+        MVP reporting scope.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR12
+        fr:
+        - FR32
+        ac:
+        - AC32
+        rules:
+        - RULE14
+        exceptions:
+        - EX11
+      responses:
+        '200':
+          description: Driver report returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DriverReportItem'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Operations Staff role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    ReportSummary:
+      type: object
+      properties:
+        totalTrips:
+          type: integer
+          minimum: 0
+        completedTrips:
+          type: integer
+          minimum: 0
+        cancelledTrips:
+          type: integer
+          minimum: 0
+        completionRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+        cancellationRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+        totalRevenue:
+          type: number
+          format: double
+          minimum: 0
+    DriverReportItem:
+      type: object
+      properties:
+        driverId:
+          type: string
+        completedTrips:
+          type: integer
+          minimum: 0
+        averageRating:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 5
+
