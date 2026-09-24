@@ -1,0 +1,229 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Driver Matching API
+  version: 1.0.0
+  description: Driver Trip Offer endpoints. Driver selection itself is internal backend
+    behavior.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Driver Matching
+paths:
+  /driver-offers:
+    get:
+      tags:
+      - Driver Matching
+      summary: List my pending trip offers
+      operationId: getMyDriverOffers
+      description: Returns Trip Offers addressed to the authenticated Driver. FR07-FR09
+        are largely internal matching behavior; this endpoint exposes the resulting
+        offers.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR03
+        fr:
+        - FR07
+        - FR08
+        - FR09
+        ac:
+        - AC07
+        - AC08
+        - AC09
+        rules:
+        - RULE02
+        - RULE03
+        - RULE04
+      responses:
+        '200':
+          description: Offers returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DriverOffer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Driver role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+  /driver-offers/{offerId}/accept:
+    post:
+      tags:
+      - Driver Matching
+      summary: Accept trip offer
+      operationId: acceptDriverOffer
+      description: Accepts a pending, unexpired Trip Offer. The Booking becomes DRIVER_ASSIGNED.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR03
+        fr:
+        - FR10
+        ac:
+        - AC10
+        rules:
+        - RULE07
+        exceptions:
+        - EX04
+      responses:
+        '200':
+          description: Offer accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverOffer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Offer does not belong to this Driver
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Offer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Offer expired, already answered or Driver unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - name: offerId
+        in: path
+        required: true
+        description: Trip Offer identifier
+        schema:
+          type: string
+  /driver-offers/{offerId}/reject:
+    post:
+      tags:
+      - Driver Matching
+      summary: Reject trip offer
+      operationId: rejectDriverOffer
+      description: Rejects a pending Trip Offer. The backend continues matching another
+        Driver without requiring a new Booking. Timeout is handled automatically by
+        the backend.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR03
+        fr:
+        - FR10
+        - FR11
+        - FR12
+        ac:
+        - AC10
+        - AC11
+        - AC12
+        rules:
+        - RULE05
+        - RULE06
+        exceptions:
+        - EX01
+        - EX02
+        - EX03
+      responses:
+        '200':
+          description: Offer rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverOffer'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Offer does not belong to this Driver
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Offer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Offer expired or already answered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - name: offerId
+        in: path
+        required: true
+        description: Trip Offer identifier
+        schema:
+          type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    DriverOffer:
+      type: object
+      properties:
+        id:
+          type: string
+        bookingId:
+          type: string
+        driverId:
+          type: string
+        status:
+          type: string
+          enum:
+          - PENDING
+          - ACCEPTED
+          - REJECTED
+          - TIMEOUT
+        offeredAt:
+          type: string
+          format: date-time
+        respondedAt:
+          type: string
+          format: date-time
+          nullable: true
