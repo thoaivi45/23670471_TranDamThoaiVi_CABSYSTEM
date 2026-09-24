@@ -1,170 +1,316 @@
-drivers_me_availability:
-  patch:
-    tags:
+openapi: 3.0.3
+info:
+  title: CAB System - Driver & Vehicle API
+  version: 1.0.0
+  description: Driver profile, availability and vehicle endpoints.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Drivers
+paths:
+  /drivers/me:
+    get:
+      tags:
       - Drivers
-
-    summary: Cập nhật trạng thái và vị trí tài xế
-
-    operationId: updateDriverAvailability
-
-    description: |
-      Driver cập nhật trạng thái Available hoặc Unavailable
-      và vị trí hiện tại.
-      Phục vụ FR15 và AC08.
-
-    requestBody:
-      required: true
-
-      content:
-        application/json:
-
-          schema:
-            $ref: ../components/schemas.yaml#/DriverAvailabilityRequest
-
-    responses:
-
-      '200':
-        description: Cập nhật trạng thái thành công
-
+      summary: Get my driver profile
+      operationId: getMyDriverProfile
+      description: Returns the authenticated Driver profile.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR05
+        fr:
+        - FR18
+        ac:
+        - AC18
+      responses:
+        '200':
+          description: Driver profile returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverProfile'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Driver role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    patch:
+      tags:
+      - Drivers
+      summary: Update my driver profile
+      operationId: updateMyDriverProfile
+      description: Updates Driver profile information.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR05
+        fr:
+        - FR18
+        ac:
+        - AC18
+      responses:
+        '200':
+          description: Driver profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverProfile'
+        '400':
+          description: Invalid driver data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Driver role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
         content:
           application/json:
-
             schema:
-              $ref: ../components/schemas.yaml#/DriverAvailability
-
-      '400':
-        $ref: ../components/responses.yaml#/BadRequest
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
-
-      '403':
-        $ref: ../components/responses.yaml#/Forbidden
-
-
-drivers_me_vehicle:
-  put:
-    tags:
+              $ref: '#/components/schemas/UpdateDriverProfileRequest'
+  /drivers/me/status:
+    patch:
+      tags:
       - Drivers
-
-    summary: Cập nhật phương tiện của tài xế
-
-    operationId: updateDriverVehicle
-
-    description: |
-      Driver lưu hoặc cập nhật thông tin phương tiện.
-      Phục vụ FR16 và AC18.
-
-    requestBody:
-      required: true
-
-      content:
-        application/json:
-
-          schema:
-            $ref: ../components/schemas.yaml#/VehicleRequest
-
-    responses:
-
-      '200':
-        description: Cập nhật phương tiện thành công
-
+      summary: Update availability status
+      operationId: updateDriverAvailability
+      description: Allows a Driver not currently in an active Trip to switch between
+        AVAILABLE and OFFLINE.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR05
+        fr:
+        - FR17
+        ac:
+        - AC17
+        rules:
+        - RULE02
+        - RULE04
+      responses:
+        '200':
+          description: Availability updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverProfile'
+        '400':
+          description: Invalid status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Driver role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Status change conflicts with an active Trip
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
         content:
           application/json:
-
             schema:
-              $ref: ../components/schemas.yaml#/Vehicle
-
-      '400':
-        $ref: ../components/responses.yaml#/BadRequest
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
-
-      '403':
-        $ref: ../components/responses.yaml#/Forbidden
-
-
-drivers_me_trip_requests:
-  get:
-    tags:
+              $ref: '#/components/schemas/DriverStatusRequest'
+  /drivers/me/vehicle:
+    get:
+      tags:
       - Drivers
-
-    summary: Xem danh sách yêu cầu chuyến
-
-    operationId: getMyTripRequests
-
-    description: |
-      Driver xem các Trip Request đang chờ xử lý.
-      Phục vụ FR10-FR11 và AC05.
-
-    responses:
-
-      '200':
-        description: Lấy danh sách yêu cầu chuyến thành công
-
+      summary: Get my vehicle
+      operationId: getMyVehicle
+      description: Returns the vehicle linked to the authenticated Driver.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR05
+        fr:
+        - FR18
+        ac:
+        - AC18
+      responses:
+        '200':
+          description: Vehicle returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Driver role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    put:
+      tags:
+      - Drivers
+      summary: Create or update my vehicle
+      operationId: upsertMyVehicle
+      description: Creates or updates Driver vehicle information.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR05
+        fr:
+        - FR18
+        ac:
+        - AC18
+        rules:
+        - RULE03
+      responses:
+        '200':
+          description: Vehicle saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '400':
+          description: Invalid vehicle data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Driver role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
         content:
           application/json:
-
             schema:
-              type: array
-
-              items:
-                $ref: ../components/schemas.yaml#/TripRequest
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
-
-      '403':
-        $ref: ../components/responses.yaml#/Forbidden
-
-
-trip_requests_requestId:
-  patch:
-    tags:
-      - Drivers
-
-    summary: Chấp nhận hoặc từ chối chuyến
-
-    operationId: respondTripRequest
-
-    description: |
-      Driver Accept hoặc Reject Trip Request.
-      Nếu Reject, hệ thống tiếp tục tìm Driver khác.
-      Phục vụ FR11-FR12 và AC06.
-
-    parameters:
-
-      - $ref: ../components/parameters.yaml#/TripRequestId
-
-    requestBody:
-      required: true
-
-      content:
-        application/json:
-
-          schema:
-            $ref: ../components/schemas.yaml#/TripRequestDecision
-
-    responses:
-
-      '200':
-        description: Xử lý Trip Request thành công
-
-        content:
-          application/json:
-
-            schema:
-              $ref: ../components/schemas.yaml#/TripRequestDecisionResult
-
-      '400':
-        $ref: ../components/responses.yaml#/BadRequest
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
-
-      '403':
-        $ref: ../components/responses.yaml#/Forbidden
-
-      '404':
-        $ref: ../components/responses.yaml#/NotFound
+              $ref: '#/components/schemas/VehicleRequest'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    DriverProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        licenseNumber:
+          type: string
+        availability:
+          type: string
+          enum:
+          - AVAILABLE
+          - OFFLINE
+          - BUSY
+        ratingAverage:
+          type: number
+          format: float
+    UpdateDriverProfileRequest:
+      type: object
+      properties:
+        licenseNumber:
+          type: string
+    DriverStatusRequest:
+      type: object
+      required:
+      - availability
+      properties:
+        availability:
+          type: string
+          enum:
+          - AVAILABLE
+          - OFFLINE
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+        plateNumber:
+          type: string
+        vehicleType:
+          type: string
+        model:
+          type: string
+    VehicleRequest:
+      type: object
+      required:
+      - plateNumber
+      - vehicleType
+      properties:
+        plateNumber:
+          type: string
+        vehicleType:
+          type: string
+        model:
+          type: string
