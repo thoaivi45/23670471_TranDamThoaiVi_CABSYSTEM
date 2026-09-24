@@ -1,0 +1,89 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Trip History API
+  version: 1.0.0
+  description: Customer Trip History endpoints.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Trip History
+paths:
+  /users/me/trips:
+    get:
+      tags:
+      - Trip History
+      summary: Get my trip history
+      operationId: getMyTripHistory
+      description: Returns only Trips belonging to the authenticated Customer.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR11
+        fr:
+        - FR30
+        ac:
+        - AC30
+      responses:
+        '200':
+          description: Trip history returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripHistoryItem'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Customer role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    TripHistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        pickupAddress:
+          type: string
+        destinationAddress:
+          type: string
+        fareAmount:
+          type: number
+          format: double
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
