@@ -1,113 +1,306 @@
-trips_tripId:
-  get:
-    tags:
+openapi: 3.0.3
+info:
+  title: CAB System - Trip API
+  version: 1.0.0
+  description: Trip lifecycle, tracking and fare finalization endpoints.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Trips
+paths:
+  /trips/{tripId}:
+    get:
+      tags:
       - Trips
-
-    summary: Xem thông tin chuyến đi
-
-    operationId: getTripById
-
-    description: |
-      Xem trạng thái và thông tin của Trip.
-      Phục vụ FR17 và AC09.
-
-    parameters:
-
-      - $ref: ../components/parameters.yaml#/TripId
-
-    responses:
-
-      '200':
-        description: Lấy Trip thành công
-
+      summary: Get trip details
+      operationId: getTripById
+      description: Returns the current Trip status for authorized Customer, assigned
+        Driver or Operations Staff.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR06
+        fr:
+        - FR19
+        ac:
+        - AC19
+      responses:
+        '200':
+          description: Trip returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Not allowed to view this Trip
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters: &id001
+      - name: tripId
+        in: path
+        required: true
+        description: Trip identifier
+        schema:
+          type: string
+  /trips/{tripId}/arrive:
+    post:
+      tags:
+      - Trips
+      summary: Mark driver arrived
+      operationId: markDriverArrived
+      description: Moves the assigned Trip from DRIVER_ASSIGNED to DRIVER_ARRIVED.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR04
+        fr:
+        - FR13
+        - FR16
+        ac:
+        - AC13
+        - AC16
+        rules:
+        - RULE08
+        exceptions:
+        - EX07
+      responses:
+        '200':
+          description: Trip status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Only the assigned Driver can update this Trip
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Invalid Trip state transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters: *id001
+  /trips/{tripId}/start:
+    post:
+      tags:
+      - Trips
+      summary: Start trip
+      operationId: startTrip
+      description: Moves the Trip from DRIVER_ARRIVED to IN_PROGRESS.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR04
+        fr:
+        - FR14
+        - FR16
+        ac:
+        - AC14
+        - AC16
+        rules:
+        - RULE08
+        exceptions:
+        - EX07
+      responses:
+        '200':
+          description: Trip started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Only the assigned Driver can update this Trip
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Trip must be DRIVER_ARRIVED before start
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters: *id001
+  /trips/{tripId}/complete:
+    post:
+      tags:
+      - Trips
+      summary: Complete trip and calculate fare
+      operationId: completeTrip
+      description: Moves an IN_PROGRESS Trip to COMPLETED, calculates the final Fare
+        according to confirmed fare configuration, and stores it on the Trip.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR04
+        - BR07
+        fr:
+        - FR15
+        - FR16
+        - FR20
+        - FR21
+        ac:
+        - AC15
+        - AC16
+        - AC20
+        - AC21
+        rules:
+        - RULE08
+        - RULE09
+        exceptions:
+        - EX07
+      responses:
+        '200':
+          description: Trip completed and fare stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '400':
+          description: Invalid completion data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Only the assigned Driver can complete this Trip
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Trip must be IN_PROGRESS before completion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters: *id001
+      requestBody:
+        required: true
         content:
           application/json:
-
             schema:
-              $ref: ../components/schemas.yaml#/Trip
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
-
-      '404':
-        $ref: ../components/responses.yaml#/NotFound
-
-
-  patch:
-    tags:
-      - Trips
-
-    summary: Cập nhật trạng thái chuyến
-
-    operationId: updateTripStatus
-
-    description: |
-      Driver sử dụng API này để bắt đầu hoặc hoàn thành Trip.
-      Phục vụ FR13, FR14, FR18 và AC07, AC10.
-
-    parameters:
-
-      - $ref: ../components/parameters.yaml#/TripId
-
-    requestBody:
-      required: true
-
-      content:
-        application/json:
-
-          schema:
-            $ref: ../components/schemas.yaml#/UpdateTripStatusRequest
-
-    responses:
-
-      '200':
-        description: Cập nhật Trip thành công
-
-        content:
-          application/json:
-
-            schema:
-              $ref: ../components/schemas.yaml#/Trip
-
-      '400':
-        $ref: ../components/responses.yaml#/BadRequest
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
-
-      '403':
-        $ref: ../components/responses.yaml#/Forbidden
-
-      '404':
-        $ref: ../components/responses.yaml#/NotFound
-
-
-users_me_trips:
-  get:
-    tags:
-      - Trips
-
-    summary: Xem lịch sử chuyến đi
-
-    operationId: getMyTripHistory
-
-    description: |
-      Customer xem lịch sử chuyến của mình.
-      Phục vụ FR25 và AC13.
-
-    responses:
-
-      '200':
-        description: Lấy lịch sử chuyến thành công
-
-        content:
-          application/json:
-
-            schema:
-              type: array
-
-              items:
-                $ref: ../components/schemas.yaml#/Trip
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
+              $ref: '#/components/schemas/CompleteTripRequest'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    Trip:
+      type: object
+      properties:
+        id:
+          type: string
+        bookingId:
+          type: string
+        driverId:
+          type: string
+        vehicleId:
+          type: string
+        status:
+          type: string
+          enum:
+          - DRIVER_ASSIGNED
+          - DRIVER_ARRIVED
+          - IN_PROGRESS
+          - COMPLETED
+        distanceKm:
+          type: number
+          format: float
+          nullable: true
+        fareAmount:
+          type: number
+          format: double
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+    CompleteTripRequest:
+      type: object
+      required:
+      - distanceKm
+      properties:
+        distanceKm:
+          type: number
+          format: float
+          minimum: 0
