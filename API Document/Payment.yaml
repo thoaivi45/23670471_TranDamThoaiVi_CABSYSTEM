@@ -1,0 +1,262 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Payment API
+  version: 1.0.0
+  description: Cash and Mock/Sandbox online payment endpoints.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Payments
+paths:
+  /payments:
+    post:
+      tags:
+      - Payments
+      summary: Create payment
+      operationId: createPayment
+      description: Creates a Cash or Online Payment for a completed Trip with a final
+        Fare. Online payments are sent to a Mock/Sandbox Payment Provider. CAB System
+        must not store sensitive card/account data.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR08
+        fr:
+        - FR22
+        - FR23
+        - FR24
+        ac:
+        - AC22
+        - AC23
+        - AC24
+        rules:
+        - RULE12
+      responses:
+        '201':
+          description: Payment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          description: Invalid payment data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Customer does not own the Trip
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Trip is not payable or already paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Payment Provider unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+  /payments/{paymentId}:
+    get:
+      tags:
+      - Payments
+      summary: Get payment
+      operationId: getPaymentById
+      description: Returns the current Payment result.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR08
+        fr:
+        - FR22
+        - FR23
+        - FR24
+        ac:
+        - AC22
+        - AC23
+        - AC24
+      responses:
+        '200':
+          description: Payment returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Not allowed to view this Payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - name: paymentId
+        in: path
+        required: true
+        description: Payment identifier
+        schema:
+          type: string
+  /payments/{paymentId}/retry:
+    post:
+      tags:
+      - Payments
+      summary: Retry failed online payment
+      operationId: retryPayment
+      description: Retries only an ONLINE Payment currently in FAILED state and stores
+        the new result.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR08
+        fr:
+        - FR25
+        ac:
+        - AC25
+        exceptions:
+        - EX08
+        - EX09
+      responses:
+        '200':
+          description: Retry processed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Customer does not own this Payment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Payment is not eligible for retry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Payment Provider unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - name: paymentId
+        in: path
+        required: true
+        description: Payment identifier
+        schema:
+          type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    CreatePaymentRequest:
+      type: object
+      required:
+      - tripId
+      - method
+      properties:
+        tripId:
+          type: string
+        method:
+          type: string
+          enum:
+          - CASH
+          - ONLINE
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+        tripId:
+          type: string
+        method:
+          type: string
+          enum:
+          - CASH
+          - ONLINE
+        amount:
+          type: number
+          format: double
+        status:
+          type: string
+          enum:
+          - PENDING
+          - PAID
+          - FAILED
+        providerReference:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
