@@ -1,73 +1,250 @@
-bookings:
-  post:
-    tags:
+openapi: 3.0.3
+info:
+  title: CAB System - Booking API
+  version: 1.0.0
+  description: Booking creation, viewing and cancellation endpoints.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Bookings
+paths:
+  /bookings:
+    post:
+      tags:
       - Bookings
-
-    summary: Tạo yêu cầu đặt chuyến
-
-    operationId: createBooking
-
-    description: |
-      Customer nhập điểm đón, điểm đến và loại xe để tạo Booking.
-      Phục vụ FR04-FR07 và AC03.
-
-    requestBody:
-      required: true
-
-      content:
-        application/json:
-
-          schema:
-            $ref: ../components/schemas.yaml#/CreateBookingRequest
-
-    responses:
-
-      '201':
-        description: Tạo Booking thành công
-
+      summary: Create booking
+      operationId: createBooking
+      description: Creates a Booking after validating pickup, destination and service
+        type. After creation, the backend starts Driver Matching automatically.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR02
+        fr:
+        - FR04
+        - FR05
+        ac:
+        - AC04
+        - AC05
+        exceptions:
+        - EX05
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid booking data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Customer role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      requestBody:
+        required: true
         content:
           application/json:
-
             schema:
-              $ref: ../components/schemas.yaml#/Booking
-
-      '400':
-        $ref: ../components/responses.yaml#/BadRequest
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
-
-
-bookings_bookingId:
-  get:
-    tags:
+              $ref: '#/components/schemas/CreateBookingRequest'
+  /bookings/{bookingId}:
+    get:
+      tags:
       - Bookings
-
-    summary: Xem trạng thái Booking
-
-    operationId: getBookingById
-
-    description: |
-      Customer xem trạng thái Booking hiện tại.
-      Phục vụ FR17 và AC09.
-
-    parameters:
-
-      - $ref: ../components/parameters.yaml#/BookingId
-
-    responses:
-
-      '200':
-        description: Lấy Booking thành công
-
-        content:
-          application/json:
-
-            schema:
-              $ref: ../components/schemas.yaml#/Booking
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
-
-      '404':
-        $ref: ../components/responses.yaml#/NotFound
+      summary: Get booking status
+      operationId: getBookingById
+      description: Returns the current Booking status and assigned Driver/Trip identifiers
+        when available.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR06
+        fr:
+        - FR19
+        ac:
+        - AC19
+      responses:
+        '200':
+          description: Booking returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Booking does not belong to this Customer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        description: Booking identifier
+        schema:
+          type: string
+  /bookings/{bookingId}/cancel:
+    post:
+      tags:
+      - Bookings
+      summary: Cancel booking
+      operationId: cancelBooking
+      description: Cancels a Booking only when the current state satisfies the cancellation
+        policy.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR02
+        fr:
+        - FR06
+        ac:
+        - AC06
+        rules:
+        - RULE13
+        exceptions:
+        - EX06
+      responses:
+        '200':
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Customer role or ownership required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Booking can no longer be cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - name: bookingId
+        in: path
+        required: true
+        description: Booking identifier
+        schema:
+          type: string
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    Location:
+      type: object
+      required:
+      - address
+      - latitude
+      - longitude
+      properties:
+        address:
+          type: string
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+    CreateBookingRequest:
+      type: object
+      required:
+      - pickup
+      - destination
+      - serviceTypeId
+      properties:
+        pickup:
+          $ref: '#/components/schemas/Location'
+        destination:
+          $ref: '#/components/schemas/Location'
+        serviceTypeId:
+          type: string
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+        customerId:
+          type: string
+        serviceTypeId:
+          type: string
+        status:
+          type: string
+          enum:
+          - SEARCHING_DRIVER
+          - DRIVER_ASSIGNED
+          - NO_DRIVER
+          - CANCELLED
+        driverId:
+          type: string
+          nullable: true
+        tripId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
