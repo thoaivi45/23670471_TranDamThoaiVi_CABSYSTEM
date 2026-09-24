@@ -1,45 +1,137 @@
-trips_tripId_ratings:
-  post:
-    tags:
+openapi: 3.0.3
+info:
+  title: CAB System - Rating API
+  version: 1.0.0
+  description: Driver rating endpoints.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Ratings
+paths:
+  /trips/{tripId}/rating:
+    post:
+      tags:
       - Ratings
-
-    summary: Đánh giá tài xế
-
-    operationId: rateDriver
-
-    description: |
-      Customer đánh giá Driver sau khi Trip hoàn thành.
-      Phục vụ FR26 và AC14.
-
-    parameters:
-
-      - $ref: ../components/parameters.yaml#/TripId
-
-    requestBody:
-      required: true
-
-      content:
-        application/json:
-
-          schema:
-            $ref: ../components/schemas.yaml#/CreateRatingRequest
-
-    responses:
-
-      '201':
-        description: Lưu đánh giá thành công
-
+      summary: Rate driver
+      operationId: rateDriver
+      description: Allows the Customer who owns a COMPLETED Trip to create exactly
+        one Driver Rating.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR11
+        fr:
+        - FR31
+        ac:
+        - AC31
+        rules:
+        - RULE10
+        - RULE11
+        exceptions:
+        - EX12
+      responses:
+        '201':
+          description: Rating created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rating'
+        '400':
+          description: Rating score or data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Customer does not own this Trip
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: Trip not completed or Rating already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - name: tripId
+        in: path
+        required: true
+        description: Trip identifier
+        schema:
+          type: string
+      requestBody:
+        required: true
         content:
           application/json:
-
             schema:
-              $ref: ../components/schemas.yaml#/Rating
-
-      '400':
-        $ref: ../components/responses.yaml#/BadRequest
-
-      '401':
-        $ref: ../components/responses.yaml#/Unauthorized
-
-      '404':
-        $ref: ../components/responses.yaml#/NotFound
+              $ref: '#/components/schemas/CreateRatingRequest'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    CreateRatingRequest:
+      type: object
+      required:
+      - score
+      properties:
+        score:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          maxLength: 1000
+    Rating:
+      type: object
+      properties:
+        id:
+          type: string
+        tripId:
+          type: string
+        customerId:
+          type: string
+        driverId:
+          type: string
+        score:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
