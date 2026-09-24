@@ -1,0 +1,364 @@
+openapi: 3.0.3
+info:
+  title: CAB System - Operations API
+  version: 1.0.0
+  description: Operations Staff query and monitoring endpoints.
+servers:
+- url: http://localhost:3000/api/v1
+  description: Local development server
+tags:
+- name: Operations
+paths:
+  /operations/customers:
+    get:
+      tags:
+      - Operations
+      summary: Search customers
+      operationId: getOperationCustomers
+      description: Operations Staff only.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR10
+        fr:
+        - FR28
+        ac:
+        - AC28
+        rules:
+        - RULE14
+        exceptions:
+        - EX11
+      responses:
+        '200':
+          description: Data returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Operations Staff role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - &id001
+        name: q
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Optional search text
+  /operations/drivers:
+    get:
+      tags:
+      - Operations
+      summary: Search drivers
+      operationId: getOperationDrivers
+      description: Operations Staff only.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR10
+        fr:
+        - FR28
+        ac:
+        - AC28
+        rules:
+        - RULE14
+        exceptions:
+        - EX11
+      responses:
+        '200':
+          description: Data returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DriverSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Operations Staff role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - *id001
+      - &id002
+        name: status
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Optional status filter
+  /operations/vehicles:
+    get:
+      tags:
+      - Operations
+      summary: Search vehicles
+      operationId: getOperationVehicles
+      description: Operations Staff only.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR10
+        fr:
+        - FR28
+        ac:
+        - AC28
+        rules:
+        - RULE14
+        exceptions:
+        - EX11
+      responses:
+        '200':
+          description: Data returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VehicleSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Operations Staff role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - *id001
+  /operations/trips:
+    get:
+      tags:
+      - Operations
+      summary: Search trips
+      operationId: getOperationTrips
+      description: Operations Staff only.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR10
+        fr:
+        - FR28
+        ac:
+        - AC28
+        rules:
+        - RULE14
+        exceptions:
+        - EX11
+      responses:
+        '200':
+          description: Data returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Operations Staff role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - *id002
+  /operations/payments:
+    get:
+      tags:
+      - Operations
+      summary: Search payments
+      operationId: getOperationPayments
+      description: Operations Staff only.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR10
+        fr:
+        - FR28
+        ac:
+        - AC28
+        rules:
+        - RULE14
+        exceptions:
+        - EX11
+      responses:
+        '200':
+          description: Data returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Operations Staff role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      parameters:
+      - *id002
+  /operations/trips/active:
+    get:
+      tags:
+      - Operations
+      summary: View active trips
+      operationId: getActiveTrips
+      description: Returns Trips currently active so Operations Staff can monitor
+        operational status.
+      security:
+      - bearerAuth: []
+      x-srs-trace:
+        br:
+        - BR10
+        fr:
+        - FR29
+        ac:
+        - AC29
+        rules:
+        - RULE14
+        exceptions:
+        - EX11
+      responses:
+        '200':
+          description: Data returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: Operations Staff role required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          example: Request data is invalid
+        details:
+          type: object
+          additionalProperties: true
+    CustomerSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        fullName:
+          type: string
+        phone:
+          type: string
+        status:
+          type: string
+    DriverSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        fullName:
+          type: string
+        availability:
+          type: string
+        ratingAverage:
+          type: number
+    VehicleSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        driverId:
+          type: string
+        plateNumber:
+          type: string
+        vehicleType:
+          type: string
+    TripSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        customerId:
+          type: string
+        driverId:
+          type: string
+          nullable: true
+        status:
+          type: string
+        fareAmount:
+          type: number
+          nullable: true
+    PaymentSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        tripId:
+          type: string
+        method:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
